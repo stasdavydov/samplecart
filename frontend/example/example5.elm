@@ -14,7 +14,7 @@ import Json.Decode exposing (decodeString)
 
 server : String
 server =
-  "ws://127.0.0.1:8765"
+  "ws://stasdavydov.com:8765"
 
 
 {-| Our stock is just a list of stuff. Lets think the stock has infinity stuff amount, no restrictions. -}

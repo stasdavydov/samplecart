@@ -1,14 +1,13 @@
 {
     "version": "1.0.0",
     "summary": "Sample cart",
-    "repository": "https://github.com/user/project.git",
+    "repository": "https://github.com/stasdavydov/samplecart.git",
     "license": "MIT",
     "source-directories": [
         "src",
         "example"
     ],
     "exposed-modules": [
-        "SampleCart"
     ],
     "dependencies": {
         "elm-lang/core": "4.0.1 <= v < 5.0.0",
