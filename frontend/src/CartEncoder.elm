@@ -1,6 +1,6 @@
 module CartEncoder exposing (cart)
 
-import Cart2 exposing (..)
+import Cart2 exposing (Cart, Item, Stuff)
 import List exposing (map)
 import Json.Encode exposing (..)
 

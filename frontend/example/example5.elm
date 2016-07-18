@@ -1,10 +1,10 @@
 import List exposing (..)
 import String exposing (toInt)
-import Cart2 exposing (..)
-import CartEncoder exposing (cart)
+import Cart3 exposing (..)
+import CartEncoder
 import CartDecoder
 import Numeral exposing (format)
-import Html exposing (Html, body, button, table, caption, thead, tbody, tfoot, tr, td, th, text, section, p, h1, input)
+import Html exposing (Html, body, button, table, caption, thead, tbody, tfoot, tr, td, th, text, section, p, h1, h2, input, pre)
 import Html.Attributes exposing (..)
 import Html.App as Html
 import Html.Events exposing (onClick, onInput)
@@ -44,16 +44,14 @@ main =
 init : (Model, Cmd Msg)
 
 init =
-  let
-    model = Model [] -- empty cart
-      [ Stuff "Bicycle" 100.50 -- stock
-      , Stuff "Rocket" 15.36
-      , Stuff "Bisquit" 21.15
-      ]
-      Nothing -- error (no error at beginning)
-      [] -- player carts list is empty
-  in
-    (!) model [ WebSocket.send server (encode 0 (cart model.cart)) ]
+  ( Model [] -- empty cart
+    [ Stuff "Bicycle" 100.50 -- stock
+    , Stuff "Rocket" 15.36
+    , Stuff "Bisquit" 21.15
+    ]
+    Nothing -- error (no error at beginning)
+    [] -- player carts list is empty
+  , Cmd.none)
 
 
 {-| We have only three messages: 1) adding a stuff into the cart; 2) change quantity of stuff in a cart;
@@ -61,6 +59,7 @@ init =
 type Msg = Add Stuff | ChangeQty Stuff String | PlayerCarts String
 
 
+{-| Update function wrapper. It will pass updated cart to server -}
 updateOnServer : Msg -> Model -> (Model, Cmd Msg)
 
 updateOnServer msg model =
@@ -69,12 +68,11 @@ updateOnServer msg model =
       update msg model
   in
     case have_to_send of
-      True ->
-        (!) newModel [ WebSocket.send server (encode 0 (cart newModel.cart)) ]
+      True -> -- send updated cart to server
+        (!) newModel [ WebSocket.send server (encode 0 (CartEncoder.cart newModel.cart)) ]
 
-      False ->
-        (!) newModel [Cmd.none]
-
+      False -> -- do nothing
+        (newModel, Cmd.none)
 
 
 {-| Definition of the controller function.
@@ -129,9 +127,9 @@ view : Model -> Html Msg
 view model =
   section [style [("margin", "10px")]]
     [ stockView model.stock
-    , cartView model.cart False
+    , cartView model.cart
     , errorView model.error
-    , playersCartsView model.player_carts
+    , consumersCartsView model.player_carts
     ]
 
 
@@ -143,16 +141,18 @@ view model =
 stockView : Stock -> Html Msg
 
 stockView stock =
-  table []
-    [ caption [] [ h1 [] [ text "Stock" ] ]
-    , thead []
-      [ tr []
-        [ th [align "left", width 100] [ text "Name" ]
-        , th [align "right", width 100] [ text "Price" ]
-        , th [width 100] []
+  section [style [("background-color", "#FFC")]]
+    [ h1 [] [ text "Stock" ]
+    , table []
+      [ thead []
+        [ tr []
+          [ th [align "left", width 100] [ text "Name" ]
+          , th [align "right", width 100] [ text "Price" ]
+          , th [width 100] []
+          ]
         ]
+      , tbody [] (map stockStuffView stock)
       ]
-    , tbody [] (map stockStuffView stock)
     ]
 
 
@@ -171,43 +171,43 @@ stockStuffView stuff =
     function return type should be the same Html Msg. Elm validates all types during compilation.
     The cartSruffView function is mapped to all the cart items.
     The Cart is not just a stuff list with quanitites. It has a subtotal calculated based on the stuff in the cart. -}
-cartView : Cart -> Bool -> Html Msg
+cartView : Cart -> Html Msg
 
-cartView cart readonly =
-  if isEmpty cart
-    then p [] [ text "Cart is empty" ]
-    else table []
-      [ caption [] [ h1 [] [ text "Cart" ]]
-      , thead []
-        [ tr []
-          [ th [ align "left", width 100 ] [ text "Name" ]
-          , th [ align "right", width 100 ] [ text "Price" ]
-          , th [ align "center", width 30 ] [ text "Qty" ]
-          , th [ align "right", width 100 ] [ text "Subtotal" ]
+cartView cart =
+  section [style [("background-color", "#CFF")]]
+    [ h1 [] [ text "Cart" ]
+    , if isEmpty cart
+        then p [] [ text "Add some stuff into cart" ]
+        else table []
+          [ thead []
+            [ tr []
+              [ th [ align "left", width 100 ] [ text "Name" ]
+              , th [ align "right", width 100 ] [ text "Price" ]
+              , th [ align "center", width 30 ] [ text "Qty" ]
+              , th [ align "right", width 100 ] [ text "Subtotal" ]
+              ]
+            ]
+          , tbody [] ( map (\stuff -> cartStuffView stuff) cart )
+          , tfoot []
+            [ tr [style [("font-weight", "bold")]]
+              [ td [ align "right", colspan 4 ] [ text ( formatPrice (subtotal cart)) ] ]
+            ]
           ]
-        ]
-      , tbody [] ( map (\stuff -> cartStuffView stuff readonly) cart )
-      , tfoot []
-        [ tr [style [("font-weight", "bold")]]
-          [ td [ align "right", colspan 4 ] [ text ( formatPrice (subtotal cart)) ] ]
-        ]
-      ]
+    ]
 
 {-| Just a row in the cart table. -}
-cartStuffView : Item -> Bool -> Html Msg
+cartStuffView : Item -> Html Msg
 
-cartStuffView item readonly =
+cartStuffView item =
   tr []
     [ td [] [ text item.stuff.name ]
     , td [ align "right" ] [ text (formatPrice item.stuff.price) ]
     , td [ align "center" ]
-      [ if readonly
-          then text (toString item.qty)
-          else input
-            [ value (toString item.qty)
-            , onInput (ChangeQty item.stuff)
-            , size 3
-            ] []
+      [ input
+        [ value (toString item.qty)
+        , onInput (ChangeQty item.stuff)
+        , size 3
+        ] []
       ]
     , td [ align "right" ] [ text (formatPrice (itemSubtotal item)) ]
     ]
@@ -230,13 +230,42 @@ formatPrice price =
   format "$0,0.00" price
 
 
-playersCartsView : List Cart -> Html Msg
+consumersCartsView : List Cart -> Html Msg
 
-playersCartsView carts =
+consumersCartsView carts =
   if isEmpty carts
-    then p [] [ text "Nobody plays yet." ]
-    else section []
-      [ h1 [] [ text "Players' Carts" ]
-      , section []
-        (map (\cart -> cartView cart True) carts)
+    then h1 [] [ text "Nobody is shopping yet" ]
+    else
+      section [style [("background-color", "#CFC")]]
+      [ h1 [] [ text "Somebody is shopping" ]
+      , table []
+        [ thead []
+          [ tr []
+            [ th [align "left", width 50] [ text "#" ]
+            , th [] [ text "Name" ]
+            , th [align "right", width 100] [ text "Total Qty" ]
+            , th [align "right", width 100] [ text "Subtotal" ]
+            ]
+          ]
+        , tbody [] (indexedMap cartSummaryView carts)
+        ]
       ]
+
+
+{-| View for indexed cart summary -}
+cartSummaryView : Int -> Cart -> Html Msg
+
+cartSummaryView idx cart =
+  if isEmpty cart
+    then
+      tr []
+        [ td [] [ text (toString (idx+1)) ]
+        , td [colspan 3] [ text "Empty user cart" ]
+        ]
+    else
+      tr []
+        [ td [] [ text (toString (idx+1)) ]
+        , td [] [ pre [] (map (\item -> text (item.stuff.name ++ " (" ++ toString (item.qty) ++ ") " ++ "\n")) cart)]
+        , td [align "right"] [ text (toString (qty cart)) ]
+        , td [align "right"] [ text (formatPrice (subtotal cart)) ]
+        ]
