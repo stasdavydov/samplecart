@@ -27,7 +27,7 @@ type alias Model =
   { cart : Cart
   , stock : Stock
   , error : Maybe String
-  , player_carts : List Cart
+  , consumer_carts : List Cart
   }
 
 
@@ -50,13 +50,13 @@ init =
     , Stuff "Bisquit" 21.15
     ]
     Nothing -- error (no error at beginning)
-    [] -- player carts list is empty
+    [] -- consumer carts list is empty
   , Cmd.none)
 
 
 {-| We have only three messages: 1) adding a stuff into the cart; 2) change quantity of stuff in a cart;
-    3) updating list of players carts from server -}
-type Msg = Add Stuff | ChangeQty Stuff String | PlayerCarts String
+    3) updating list of consumers carts from server -}
+type Msg = Add Stuff | ChangeQty Stuff String | ConsumerCarts String
 
 
 {-| Update function wrapper. It will pass updated cart to server -}
@@ -98,20 +98,20 @@ update msg model =
         Err msg ->
           ({ model | error = Just msg }, False)
 
-    PlayerCarts message ->
+    ConsumerCarts message ->
       case decodeString (Json.Decode.list CartDecoder.cart) message of
         Ok carts ->
-          ({ model | player_carts = carts }, False)
+          ({ model | consumer_carts = carts }, False)
 
         Err msg ->
-          ({ model | error = Just msg, player_carts = [] }, False)
+          ({ model | error = Just msg, consumer_carts = [] }, False)
 
 
 
 subscriptions : Model -> Sub Msg
 
 subscriptions model =
-  WebSocket.listen server PlayerCarts
+  WebSocket.listen server ConsumerCarts
 
 
 {-| This is a view. Translation function of the model into HTML.
@@ -129,7 +129,7 @@ view model =
     [ stockView model.stock
     , cartView model.cart
     , errorView model.error
-    , consumersCartsView model.player_carts
+    , consumersCartsView model.consumer_carts
     ]
 
 
