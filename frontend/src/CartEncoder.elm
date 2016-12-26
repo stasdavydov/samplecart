@@ -1,20 +1,20 @@
 module CartEncoder exposing (cart)
 
-import Cart2 exposing (Cart, Item, Stuff)
+import Cart2 exposing (Cart, Item, Product)
 import List exposing (map)
 import Json.Encode exposing (..)
 
-stuff : Stuff -> Value
-stuff stuff =
+product : Product -> Value
+product product =
   object
-    [ ("name", string stuff.name)
-    , ("price", float stuff.price)
+    [ ("name", string product.name)
+    , ("price", float product.price)
     ]
 
 item : Item -> Value
 item item =
   object
-    [ ("stuff", stuff item.stuff)
+    [ ("product", product item.product)
     , ("qty", int item.qty)
     ]
 

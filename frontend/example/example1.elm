@@ -6,8 +6,8 @@ import Html.App as Html
 import Html.Events exposing (onClick)
 
 
-{-| Our stock is just a list of stuff. Lets think the stock has infinity stuff amount, no restrictions. -}
-type alias Stock = List Stuff
+{-| Our stock is just a list of product. Lets think the stock has infinity product amount, no restrictions. -}
+type alias Stock = List Product
 
 
 {-| One of the key points -- the model of the app.
@@ -20,26 +20,26 @@ type alias Model = { cart : Cart, stock : Stock }
 main =
   Html.beginnerProgram
     { model = Model []
-      [ Stuff "Bicycle" 100.50
-      , Stuff "Rocket" 15.36
-      , Stuff "Bisquit" 21.15
+      [ Product "Bicycle" 100.50
+      , Product "Rocket" 15.36
+      , Product "Bisquit" 21.15
       ]
     , view = view
     , update = update
     }
 
-{-| We have only one message -- adding a stuff into the cart -}
-type Msg = Add Stuff
+{-| We have only one message -- adding a product into the cart -}
+type Msg = Add Product
 
 {-| Defenition of the controller function.
     It takes a message, model and return new moel based on the message handling.
-    How we handle the Add message? Update the model's cart with new stuff come with the message. -}
+    How we handle the Add message? Update the model's cart with new product come with the message. -}
 update : Msg -> Model -> Model
 
 update msg model =
   case msg of
-    Add stuff ->
-      { model | cart = add model.cart stuff }
+    Add product ->
+      { model | cart = add model.cart product }
 
 
 {-| This is a view. Translation function of the model into HTML.
@@ -59,11 +59,11 @@ view model =
     ]
 
 
-{-| Stock view works with the stock. It's a table of stuff we have in the stock.
+{-| Stock view works with the stock. It's a table of product we have in the stock.
     I placed some layout data like align and width right into the code to make
     the layout more usable. There are Elm libraries for better CSS style representation.
-    So the stock view is a table with header and body of stuff rows.
-    The stockStuffView is mapped to all the stock stuff. -}
+    So the stock view is a table with header and body of product rows.
+    The stockProductView is mapped to all the stock product. -}
 stockView : Stock -> Html Msg
 
 stockView stock =
@@ -76,25 +76,25 @@ stockView stock =
         , th [width 100] []
         ]
       ]
-    , tbody [] (map stockStuffView stock)
+    , tbody [] (map stockProductView stock)
     ]
 
 
-{-| The helper function for stuff row in the stock.
-    Please look at the "Add to Cart" button. You see how the message Add Stuff is linked to the button onClick event. -}
-stockStuffView : Stuff -> Html Msg
+{-| The helper function for product row in the stock.
+    Please look at the "Add to Cart" button. You see how the message Add Product is linked to the button onClick event. -}
+stockProductView : Product -> Html Msg
 
-stockStuffView stuff =
+stockProductView product =
   tr []
-    [ td [] [ text stuff.name ]
-    , td [align "right"] [ text ("\t$" ++ toString stuff.price) ]
-    , td [] [ button [ onClick (Add stuff) ] [ text "Add to Cart" ] ]
+    [ td [] [ text product.name ]
+    , td [align "right"] [ text ("\t$" ++ toString product.price) ]
+    , td [] [ button [ onClick (Add product) ] [ text "Add to Cart" ] ]
     ]
 
 {-| Cart view is another table with cart items. This view doesn't send any messages yet but the
     function return type should be the same Html Msg. Elm validates all types during compilation.
     The cartSruffView function is mapped to all the cart items.
-    The Cart is not just a stuff list with quanitites. It has a subtotal calculated based on the stuff in the cart. -}
+    The Cart is not just a product list with quanitites. It has a subtotal calculated based on the product in the cart. -}
 cartView : Cart -> Html Msg
 
 cartView cart =
@@ -110,7 +110,7 @@ cartView cart =
           , th [ align "right", width 100 ] [ text "Subtotal" ]
           ]
         ]
-      , tbody [] (map cartStuffView cart)
+      , tbody [] (map cartProductView cart)
       , tfoot []
         [ tr [style [("font-weight", "bold")]]
           [ td [ align "right", colspan 4 ] [ text ("$" ++ toString (subtotal cart)) ] ]
@@ -118,12 +118,12 @@ cartView cart =
       ]
 
 {-| Just a row in the cart table. -}
-cartStuffView : Item -> Html Msg
+cartProductView : Item -> Html Msg
 
-cartStuffView item =
+cartProductView item =
   tr []
-    [ td [] [ text item.stuff.name ]
-    , td [ align "right" ] [ text ("$" ++ toString item.stuff.price) ]
+    [ td [] [ text item.product.name ]
+    , td [ align "right" ] [ text ("$" ++ toString item.product.price) ]
     , td [ align "center" ] [ text (toString item.qty) ]
     , td [ align "right" ] [ text ("$" ++ toString (itemSubtotal item)) ]
     ]

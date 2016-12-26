@@ -17,8 +17,8 @@ server =
   "ws://127.0.0.1:8765"
 
 
-{-| Our stock is just a list of stuff. Lets think the stock has infinity stuff amount, no restrictions. -}
-type alias Stock = List Stuff
+{-| Our stock is just a list of product. Lets think the stock has infinity product amount, no restrictions. -}
+type alias Stock = List Product
 
 
 {-| One of the key points -- the model of the app.
@@ -45,18 +45,18 @@ init : (Model, Cmd Msg)
 
 init =
   ( Model [] -- empty cart
-    [ Stuff "Bicycle" 100.50 -- stock
-    , Stuff "Rocket" 15.36
-    , Stuff "Bisquit" 21.15
+    [ Product "Bicycle" 100.50 -- stock
+    , Product "Rocket" 15.36
+    , Product "Bisquit" 21.15
     ]
     Nothing -- error (no error at beginning)
     [] -- consumer carts list is empty
   , Cmd.none)
 
 
-{-| We have only three messages: 1) adding a stuff into the cart; 2) change quantity of stuff in a cart;
+{-| We have only three messages: 1) adding a product into the cart; 2) change quantity of product in a cart;
     3) updating list of consumers carts from server -}
-type Msg = Add Stuff | ChangeQty Stuff String | ConsumerCarts String
+type Msg = Add Product | ChangeQty Product String | ConsumerCarts String
 
 
 {-| Update function wrapper. It will pass updated cart to server -}
@@ -77,18 +77,18 @@ updateOnServer msg model =
 
 {-| Definition of the controller function.
     It takes a message, model and return new moel based on the message handling.
-    How we handle the Add message? Update the model's cart with new stuff come with the message. -}
+    How we handle the Add message? Update the model's cart with new product come with the message. -}
 update : Msg -> Model -> (Model, Bool)
 
 update msg model =
   case msg of
-    Add stuff ->
-      ({ model | cart = add model.cart stuff }, True)
+    Add product ->
+      ({ model | cart = add model.cart product }, True)
 
-    ChangeQty stuff str ->
+    ChangeQty product str ->
       case toInt str of
         Ok qty ->
-          case changeQty model.cart stuff qty of
+          case changeQty model.cart product qty of
             Ok cart ->
               ({ model | cart = cart, error = Nothing }, True)
 
@@ -133,11 +133,11 @@ view model =
     ]
 
 
-{-| Stock view works with the stock. It's a table of stuff we have in the stock.
+{-| Stock view works with the stock. It's a table of product we have in the stock.
     I placed some layout data like align and width right into the code to make
     the layout more usable. There are Elm libraries for better CSS style representation.
-    So the stock view is a table with header and body of stuff rows.
-    The stockStuffView is mapped to all the stock stuff. -}
+    So the stock view is a table with header and body of product rows.
+    The stockProductView is mapped to all the stock product. -}
 stockView : Stock -> Html Msg
 
 stockView stock =
@@ -151,33 +151,33 @@ stockView stock =
           , th [width 100] []
           ]
         ]
-      , tbody [] (map stockStuffView stock)
+      , tbody [] (map stockProductView stock)
       ]
     ]
 
 
-{-| The helper function for stuff row in the stock.
-    Please look at the "Add to Cart" button. You see how the message Add Stuff is linked to the button onClick event. -}
-stockStuffView : Stuff -> Html Msg
+{-| The helper function for product row in the stock.
+    Please look at the "Add to Cart" button. You see how the message Add Product is linked to the button onClick event. -}
+stockProductView : Product -> Html Msg
 
-stockStuffView stuff =
+stockProductView product =
   tr []
-    [ td [] [ text stuff.name ]
-    , td [align "right"] [ text (formatPrice stuff.price) ]
-    , td [] [ button [ onClick (Add stuff) ] [ text "Add to Cart" ] ]
+    [ td [] [ text product.name ]
+    , td [align "right"] [ text (formatPrice product.price) ]
+    , td [] [ button [ onClick (Add product) ] [ text "Add to Cart" ] ]
     ]
 
 {-| Cart view is another table with cart items. This view doesn't send any messages yet but the
     function return type should be the same Html Msg. Elm validates all types during compilation.
     The cartSruffView function is mapped to all the cart items.
-    The Cart is not just a stuff list with quanitites. It has a subtotal calculated based on the stuff in the cart. -}
+    The Cart is not just a product list with quanitites. It has a subtotal calculated based on the product in the cart. -}
 cartView : Cart -> Html Msg
 
 cartView cart =
   section [style [("background-color", "#CFF")]]
     [ h1 [] [ text "Cart" ]
     , if isEmpty cart
-        then p [] [ text "Add some stuff into cart" ]
+        then p [] [ text "Add some product into cart" ]
         else table []
           [ thead []
             [ tr []
@@ -187,7 +187,7 @@ cartView cart =
               , th [ align "right", width 100 ] [ text "Subtotal" ]
               ]
             ]
-          , tbody [] ( map (\stuff -> cartStuffView stuff) cart )
+          , tbody [] ( map (\product -> cartProductView product) cart )
           , tfoot []
             [ tr [style [("font-weight", "bold")]]
               [ td [ align "right", colspan 4 ] [ text ( formatPrice (subtotal cart)) ] ]
@@ -196,16 +196,16 @@ cartView cart =
     ]
 
 {-| Just a row in the cart table. -}
-cartStuffView : Item -> Html Msg
+cartProductView : Item -> Html Msg
 
-cartStuffView item =
+cartProductView item =
   tr []
-    [ td [] [ text item.stuff.name ]
-    , td [ align "right" ] [ text (formatPrice item.stuff.price) ]
+    [ td [] [ text item.product.name ]
+    , td [ align "right" ] [ text (formatPrice item.product.price) ]
     , td [ align "center" ]
       [ input
         [ value (toString item.qty)
-        , onInput (ChangeQty item.stuff)
+        , onInput (ChangeQty item.product)
         , size 3
         ] []
       ]
@@ -265,7 +265,7 @@ cartSummaryView idx cart =
     else
       tr []
         [ td [] [ text (toString (idx+1)) ]
-        , td [] [ pre [] (map (\item -> text (item.stuff.name ++ " (" ++ toString (item.qty) ++ ") " ++ "\n")) cart)]
+        , td [] [ pre [] (map (\item -> text (item.product.name ++ " (" ++ toString (item.qty) ++ ") " ++ "\n")) cart)]
         , td [align "right"] [ text (toString (qty cart)) ]
         , td [align "right"] [ text (formatPrice (subtotal cart)) ]
         ]
